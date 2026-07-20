@@ -2,51 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
-  height: 100%;
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
   background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(109,91,246,0.10), transparent 60%),
-    radial-gradient(900px 400px at 100% 0%, rgba(139,123,255,0.07), transparent 55%),
-    #0b0b14;
+    radial-gradient(900px 520px at 10% -10%, rgba(109, 91, 246, 0.16), transparent 62%),
+    radial-gradient(700px 420px at 96% 4%, rgba(129, 88, 255, 0.10), transparent 58%),
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px),
+    #080912;
+  background-size: auto, auto, 36px 36px, 36px 36px, auto;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #343752 #111321;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #111321;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #343752;
+  border-radius: 999px;
 }
 
 .card {
-  @apply bg-panel/90 border border-border rounded-2xl p-5 shadow-lg shadow-black/20 backdrop-blur-sm transition-shadow;
+  @apply rounded-2xl border border-white/[0.08] bg-panel/90 p-5 shadow-xl shadow-black/20 backdrop-blur-sm transition-all duration-200;
 }
 
 .card-hover {
-  @apply hover:border-accent/40 hover:shadow-accent/10;
+  @apply hover:-translate-y-0.5 hover:border-accent/35 hover:shadow-glow;
 }
 
 .card-stat {
-  @apply bg-panel/90 border border-border rounded-2xl p-4 flex items-center gap-3 shadow-lg shadow-black/20;
+  @apply relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-panel to-panel2/70 p-4 flex items-center gap-3 shadow-lg shadow-black/20;
+}
+
+.card-stat::after {
+  content: "";
+  position: absolute;
+  width: 86px;
+  height: 86px;
+  right: -35px;
+  bottom: -45px;
+  border-radius: 999px;
+  background: rgba(109, 91, 246, 0.10);
+  filter: blur(3px);
+}
+
+.hero-panel {
+  @apply relative overflow-hidden rounded-3xl border border-accent/20 bg-gradient-to-br from-accent/15 via-panel to-panel p-5 md:p-6 shadow-glow;
+}
+
+.hero-panel::before {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  right: -95px;
+  top: -120px;
+  background: rgba(154, 140, 255, 0.18);
+  filter: blur(14px);
 }
 
 .btn-primary {
-  @apply bg-gradient-to-b from-accent-light to-accent hover:from-accent hover:to-accent-dark transition-all text-white font-semibold px-4 py-2 rounded-lg shadow-md shadow-accent/20 active:scale-[0.98];
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-accent-light to-accent px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:-translate-y-0.5 hover:from-[#a99eff] hover:to-accent active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
 }
 
 .btn-secondary {
-  @apply bg-panel2 hover:bg-border transition-colors text-gray-200 font-medium px-4 py-2 rounded-lg border border-border active:scale-[0.98];
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.035] px-4 py-2.5 text-sm font-medium text-gray-200 transition-all hover:border-white/[0.17] hover:bg-white/[0.07] active:scale-[0.98];
 }
 
 .btn-danger {
-  @apply bg-bad/20 hover:bg-bad/30 transition-colors text-red-300 font-medium px-4 py-2 rounded-lg border border-bad/40 active:scale-[0.98];
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-bad/35 bg-bad/10 px-4 py-2.5 text-sm font-medium text-red-300 transition-all hover:bg-bad/20 active:scale-[0.98];
+}
+
+.icon-btn {
+  @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-gray-400 transition-all hover:border-accent/35 hover:bg-accent/10 hover:text-accent-light;
 }
 
 .input {
-  @apply w-full bg-panel2 border border-border rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors;
+  @apply w-full rounded-xl border border-white/[0.09] bg-[#0d0f1b]/80 px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 outline-none transition-all focus:border-accent/70 focus:ring-4 focus:ring-accent/10;
 }
 
 .label {
-  @apply text-xs font-medium text-gray-400 mb-1 block;
+  @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500;
 }
 
 .badge {
-  @apply text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1;
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
 }
 
 .badge-good { @apply bg-good/15 text-green-400 ring-1 ring-inset ring-good/30; }
@@ -57,28 +116,72 @@ body {
 .badge-pink { @apply bg-pink-500/15 text-pink-400 ring-1 ring-inset ring-pink-500/30; }
 
 .tab-btn {
-  @apply px-4 py-2 rounded-lg text-sm font-medium border transition-colors;
+  @apply rounded-xl border px-4 py-2.5 text-sm font-medium transition-all;
 }
+
 .tab-btn-active {
-  @apply bg-accent border-accent text-white shadow-md shadow-accent/20;
+  @apply border-accent bg-accent text-white shadow-lg shadow-accent/20;
 }
+
 .tab-btn-inactive {
-  @apply border-border text-gray-400 hover:text-gray-200 hover:border-gray-500;
+  @apply border-white/[0.08] bg-white/[0.02] text-gray-400 hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-gray-200;
 }
 
 .section-title {
   @apply font-display font-semibold tracking-wide text-gray-100;
 }
 
+.toolbar {
+  @apply flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-panel/70 p-3.5 md:flex-row md:items-center md:justify-between;
+}
+
+.client-card {
+  @apply overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-panel to-[#10121e] shadow-lg shadow-black/20 transition-all hover:border-accent/30;
+}
+
+.client-card-header {
+  @apply flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between md:p-5;
+}
+
+.avatar-ring {
+  @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/20 to-accent/5 text-sm font-bold text-accent-light shadow-inner;
+}
+
+.metric-chip {
+  @apply rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2;
+}
+
+.empty-state {
+  @apply rounded-3xl border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-14 text-center;
+}
+
+.modal-backdrop {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm;
+}
+
+.modal-panel {
+  @apply w-full max-h-[92vh] overflow-y-auto rounded-3xl border border-white/[0.10] bg-[#111321] p-5 shadow-2xl shadow-black/50 md:p-6;
+}
+
 table.data-table {
-  @apply w-full text-sm;
+  @apply w-full min-w-[760px] text-sm;
 }
+
 table.data-table th {
-  @apply text-left text-gray-400 font-medium py-2.5 border-b border-border uppercase text-[11px] tracking-wider;
+  @apply border-b border-white/[0.08] py-3 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500;
 }
+
 table.data-table td {
-  @apply py-3 border-b border-border/60;
+  @apply border-b border-white/[0.055] py-3.5 text-gray-300;
 }
+
 table.data-table tbody tr {
-  @apply transition-colors hover:bg-panel2/50;
+  @apply transition-colors hover:bg-white/[0.025];
+}
+
+@media (max-width: 767px) {
+  .card,
+  .hero-panel {
+    border-radius: 1rem;
+  }
 }

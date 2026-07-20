@@ -115,3 +115,12 @@ Cosas que no vienen incluidas todavía pero que puedes pedirme después:
 - Registro de actividad (quién hizo qué y cuándo).
 - Roles más granulares (ej. un vendedor que solo vea sus propios clientes).
 - Página pública para que el cliente final vea su propio código/estado de cuenta.
+
+## Separación de clientes (actualización)
+
+El menú **Clientes** ahora tiene dos apartados independientes:
+
+- **Clientes por perfil**: usa las tablas `clients` y `subscriptions`, mostrando únicamente suscripciones de tipo `perfil`.
+- **Clientes cuenta completa**: usa directamente `rental_accounts` y agrupa las cuentas por nombre, teléfono y correo del cliente.
+
+No se necesita ejecutar una migración nueva en Neon para esta actualización. Solo se deben subir los archivos modificados a GitHub; Vercel reconstruirá el proyecto automáticamente.
