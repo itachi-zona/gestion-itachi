@@ -21,6 +21,15 @@ function statusInfo(r) {
   return { label: `${days} días restantes`, cls: "badge-good" };
 }
 
+function providerStatusInfo(r) {
+  if (!r.provider_next_payment_date) return { label: "Sin fecha de pago al proveedor", cls: "badge-neutral" };
+  const days = Number(r.provider_days_left);
+  if (days < 0) return { label: `Debías pagar hace ${Math.abs(days)} día${Math.abs(days) === 1 ? "" : "s"}`, cls: "badge-bad" };
+  if (days === 0) return { label: "Debes pagarle hoy", cls: "badge-warn" };
+  if (days <= 3) return { label: `Pagarle en ${days} día${days === 1 ? "" : "s"}`, cls: "badge-warn" };
+  return { label: `Pagarle en ${days} días`, cls: "badge-good" };
+}
+
 export default function CuentasCompletasPage() {
   const [rentals, setRentals] = useState([]);
   const [services, setServices] = useState([]);
@@ -32,6 +41,8 @@ export default function CuentasCompletasPage() {
   const [editEmail, setEditEmail] = useState(null);
   const [editPass, setEditPass] = useState(null);
   const [editDays, setEditDays] = useState(null);
+  const [editProvider, setEditProvider] = useState(null);
+  const [editClientContact, setEditClientContact] = useState(null);
   const [filter, setFilter] = useState("todos");
 
   const [newRental, setNewRental] = useState({
@@ -39,11 +50,17 @@ export default function CuentasCompletasPage() {
     email: "",
     password: "",
     client_name: "",
+    client_phone: "",
+    client_email: "",
     account_created_date: todayISO(),
     expiration_date: addMonthISO(todayISO()),
     extra_days: 0,
     amount: "",
-    notes: ""
+    notes: "",
+    provider_name: "",
+    provider_amount: "",
+    provider_last_payment_date: "",
+    provider_next_payment_date: ""
   });
 
   async function load() {
@@ -99,11 +116,17 @@ export default function CuentasCompletasPage() {
       email: "",
       password: "",
       client_name: "",
+      client_phone: "",
+      client_email: "",
       account_created_date: todayISO(),
       expiration_date: addMonthISO(todayISO()),
       extra_days: 0,
       amount: "",
-      notes: ""
+      notes: "",
+      provider_name: "",
+      provider_amount: "",
+      provider_last_payment_date: "",
+      provider_next_payment_date: ""
     });
     setShowNew(false);
     load();
@@ -147,6 +170,44 @@ export default function CuentasCompletasPage() {
     setEditDays(null);
     load();
     if (selected?.id === id) loadDetail(id);
+  }
+
+  async function saveClientContact(id) {
+    await fetch(`/api/rental-accounts/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client_name: editClientContact.client_name, client_phone: editClientContact.client_phone, client_email: editClientContact.client_email })
+    });
+    setEditClientContact(null);
+    load();
+    if (selected?.id === id) loadDetail(id);
+  }
+
+  async function saveProvider(id) {
+    await fetch(`/api/rental-accounts/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        provider_name: editProvider.provider_name,
+        provider_amount: editProvider.provider_amount || null,
+        provider_last_payment_date: editProvider.provider_last_payment_date || null,
+        provider_next_payment_date: editProvider.provider_next_payment_date || null
+      })
+    });
+    setEditProvider(null);
+    load();
+    if (selected?.id === id) loadDetail(id);
+  }
+
+  async function markProviderPaid(r) {
+    const today = todayISO();
+    await fetch(`/api/rental-accounts/${r.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider_last_payment_date: today, provider_next_payment_date: addMonthISO(today) })
+    });
+    load();
+    if (selected?.id === r.id) loadDetail(r.id);
   }
 
   async function registerPayment(e) {
@@ -255,6 +316,14 @@ export default function CuentasCompletasPage() {
               <input className="input" value={newRental.client_name} onChange={(e) => setNewRental({ ...newRental, client_name: e.target.value })} />
             </div>
             <div>
+              <label className="label">Teléfono del cliente</label>
+              <input className="input" value={newRental.client_phone} onChange={(e) => setNewRental({ ...newRental, client_phone: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Correo del cliente</label>
+              <input className="input" value={newRental.client_email} onChange={(e) => setNewRental({ ...newRental, client_email: e.target.value })} />
+            </div>
+            <div>
               <label className="label">Correo de la cuenta</label>
               <input className="input" required value={newRental.email} onChange={(e) => setNewRental({ ...newRental, email: e.target.value })} />
             </div>
@@ -280,9 +349,41 @@ export default function CuentasCompletasPage() {
               <input type="number" className="input" value={newRental.extra_days} onChange={(e) => setNewRental({ ...newRental, extra_days: e.target.value })} />
             </div>
             <div>
-              <label className="label">Monto que paga (S/)</label>
+              <label className="label">Monto que paga el cliente (S/)</label>
               <input type="number" step="0.01" className="input" value={newRental.amount} onChange={(e) => setNewRental({ ...newRental, amount: e.target.value })} />
             </div>
+
+            <div className="col-span-2 border-t border-border pt-4 mt-1">
+              <p className="section-title text-sm mb-3">Proveedor (a quién le compras/pagas esta cuenta)</p>
+            </div>
+            <div>
+              <label className="label">Nombre del proveedor</label>
+              <input className="input" value={newRental.provider_name} onChange={(e) => setNewRental({ ...newRental, provider_name: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Monto que le pagas (S/)</label>
+              <input type="number" step="0.01" className="input" value={newRental.provider_amount} onChange={(e) => setNewRental({ ...newRental, provider_amount: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Fecha en que le pagaste</label>
+              <input
+                type="date"
+                className="input"
+                value={newRental.provider_last_payment_date}
+                onChange={(e) =>
+                  setNewRental({
+                    ...newRental,
+                    provider_last_payment_date: e.target.value,
+                    provider_next_payment_date: newRental.provider_next_payment_date || addMonthISO(e.target.value)
+                  })
+                }
+              />
+            </div>
+            <div>
+              <label className="label">Fecha en que le debes pagar</label>
+              <input type="date" className="input" value={newRental.provider_next_payment_date} onChange={(e) => setNewRental({ ...newRental, provider_next_payment_date: e.target.value })} />
+            </div>
+
             <div className="col-span-2">
               <label className="label">Notas</label>
               <input className="input" value={newRental.notes} onChange={(e) => setNewRental({ ...newRental, notes: e.target.value })} />
@@ -309,6 +410,7 @@ export default function CuentasCompletasPage() {
                 <th>Días extra</th>
                 <th>Estado</th>
                 <th>Monto</th>
+                <th>Proveedor</th>
                 <th></th>
               </tr>
             </thead>
@@ -338,6 +440,16 @@ export default function CuentasCompletasPage() {
                     <td>{r.extra_days > 0 ? `+${r.extra_days}d` : "—"}</td>
                     <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
                     <td>{r.amount ? `S/${Number(r.amount).toFixed(2)}` : "—"}</td>
+                    <td>
+                      {r.provider_name ? (
+                        <>
+                          <p className="text-xs">{r.provider_name}</p>
+                          <span className={`badge ${providerStatusInfo(r).cls}`}>{providerStatusInfo(r).label}</span>
+                        </>
+                      ) : (
+                        <span className="text-xs text-gray-500">—</span>
+                      )}
+                    </td>
                     <td className="text-right">
                       <button
                         className="text-red-400 text-xs hover:underline"
@@ -354,7 +466,7 @@ export default function CuentasCompletasPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center text-gray-500 py-6">
+                  <td colSpan={9} className="text-center text-gray-500 py-6">
                     No hay cuentas completas registradas en esta vista.
                   </td>
                 </tr>
@@ -371,7 +483,42 @@ export default function CuentasCompletasPage() {
             <div className="space-y-4">
               <div>
                 <span className={`badge ${statusInfo(selected).cls}`}>{statusInfo(selected).label}</span>
-                {selected.client_name && <p className="text-sm text-gray-400 mt-2">Cliente: {selected.client_name}</p>}
+              </div>
+
+              {/* Cliente editable */}
+              <div>
+                <label className="label">Cliente</label>
+                {editClientContact?.id === selected.id ? (
+                  <div className="space-y-2">
+                    <input className="input" placeholder="Nombre" value={editClientContact.client_name} onChange={(e) => setEditClientContact({ ...editClientContact, client_name: e.target.value })} />
+                    <input className="input" placeholder="Teléfono" value={editClientContact.client_phone} onChange={(e) => setEditClientContact({ ...editClientContact, client_phone: e.target.value })} />
+                    <input className="input" placeholder="Correo" value={editClientContact.client_email} onChange={(e) => setEditClientContact({ ...editClientContact, client_email: e.target.value })} />
+                    <div className="flex gap-2">
+                      <button className="btn-primary text-xs" onClick={() => saveClientContact(selected.id)}>Guardar</button>
+                      <button className="btn-secondary text-xs" onClick={() => setEditClientContact(null)}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm">
+                      <p>{selected.client_name || "Sin nombre asignado"}</p>
+                      <p className="text-xs text-gray-500">{selected.client_phone || "—"} {selected.client_email && `· ${selected.client_email}`}</p>
+                    </div>
+                    <button
+                      className="text-xs text-accent-light hover:underline"
+                      onClick={() =>
+                        setEditClientContact({
+                          id: selected.id,
+                          client_name: selected.client_name || "",
+                          client_phone: selected.client_phone || "",
+                          client_email: selected.client_email || ""
+                        })
+                      }
+                    >
+                      Editar
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Correo editable */}
@@ -452,7 +599,62 @@ export default function CuentasCompletasPage() {
 
               <div className="border-t border-border pt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="label mb-0">Pagos ({selected.payments?.length || 0})</p>
+                  <p className="label mb-0">Proveedor (a quién le pagas por esta cuenta)</p>
+                  <span className={`badge ${providerStatusInfo(selected).cls}`}>{providerStatusInfo(selected).label}</span>
+                </div>
+                {editProvider?.id === selected.id ? (
+                  <div className="space-y-2">
+                    <input className="input" placeholder="Nombre del proveedor" value={editProvider.provider_name} onChange={(e) => setEditProvider({ ...editProvider, provider_name: e.target.value })} />
+                    <input type="number" step="0.01" className="input" placeholder="Monto que le pagas (S/)" value={editProvider.provider_amount} onChange={(e) => setEditProvider({ ...editProvider, provider_amount: e.target.value })} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="label">Le pagaste el</label>
+                        <input type="date" className="input" value={editProvider.provider_last_payment_date} onChange={(e) => setEditProvider({ ...editProvider, provider_last_payment_date: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="label">Debes pagarle el</label>
+                        <input type="date" className="input" value={editProvider.provider_next_payment_date} onChange={(e) => setEditProvider({ ...editProvider, provider_next_payment_date: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="btn-primary text-xs" onClick={() => saveProvider(selected.id)}>Guardar</button>
+                      <button className="btn-secondary text-xs" onClick={() => setEditProvider(null)}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm space-y-1">
+                    <p>{selected.provider_name || "Sin proveedor asignado"}{selected.provider_amount ? ` · S/${Number(selected.provider_amount).toFixed(2)}` : ""}</p>
+                    <p className="text-xs text-gray-500">
+                      Le pagaste: {selected.provider_last_payment_date ? new Date(selected.provider_last_payment_date).toLocaleDateString() : "—"}
+                      {" · "}
+                      Debes pagarle: {selected.provider_next_payment_date ? new Date(selected.provider_next_payment_date).toLocaleDateString() : "—"}
+                    </p>
+                    <div className="flex gap-3 pt-1">
+                      <button
+                        className="text-xs text-accent-light hover:underline"
+                        onClick={() =>
+                          setEditProvider({
+                            id: selected.id,
+                            provider_name: selected.provider_name || "",
+                            provider_amount: selected.provider_amount || "",
+                            provider_last_payment_date: selected.provider_last_payment_date || "",
+                            provider_next_payment_date: selected.provider_next_payment_date || ""
+                          })
+                        }
+                      >
+                        Editar
+                      </button>
+                      <button className="text-xs text-green-400 hover:underline" onClick={() => markProviderPaid(selected)}>
+                        Marcar como pagado hoy (+1 mes)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="label mb-0">Pagos del cliente ({selected.payments?.length || 0})</p>
                   <button
                     className="text-xs text-accent-light hover:underline"
                     onClick={() =>

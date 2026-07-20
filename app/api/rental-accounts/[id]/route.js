@@ -9,7 +9,8 @@ export async function GET(req, { params }) {
   const rows = await sql`
     SELECT r.*, s.name AS service_name, s.slug AS service_slug,
       (r.expiration_date + (r.extra_days || ' days')::interval)::date AS final_expiration_date,
-      ((r.expiration_date + (r.extra_days || ' days')::interval)::date - CURRENT_DATE) AS days_left
+      ((r.expiration_date + (r.extra_days || ' days')::interval)::date - CURRENT_DATE) AS days_left,
+      (r.provider_next_payment_date - CURRENT_DATE) AS provider_days_left
     FROM rental_accounts r
     LEFT JOIN services s ON s.id = r.service_id
     WHERE r.id = ${params.id}
@@ -34,13 +35,19 @@ export async function PUT(req, { params }) {
     email,
     password,
     client_name,
+    client_phone,
+    client_email,
     account_created_date,
     expiration_date,
     extra_days,
     last_payment_date,
     amount,
     notes,
-    status
+    status,
+    provider_name,
+    provider_amount,
+    provider_last_payment_date,
+    provider_next_payment_date
   } = await req.json();
 
   const rows = await sql`
@@ -49,13 +56,19 @@ export async function PUT(req, { params }) {
       email = COALESCE(${email}, email),
       password = COALESCE(${password}, password),
       client_name = COALESCE(${client_name}, client_name),
+      client_phone = COALESCE(${client_phone}, client_phone),
+      client_email = COALESCE(${client_email}, client_email),
       account_created_date = COALESCE(${account_created_date}, account_created_date),
       expiration_date = COALESCE(${expiration_date}, expiration_date),
       extra_days = COALESCE(${extra_days}, extra_days),
       last_payment_date = COALESCE(${last_payment_date}, last_payment_date),
       amount = COALESCE(${amount}, amount),
       notes = COALESCE(${notes}, notes),
-      status = COALESCE(${status}, status)
+      status = COALESCE(${status}, status),
+      provider_name = COALESCE(${provider_name}, provider_name),
+      provider_amount = COALESCE(${provider_amount}, provider_amount),
+      provider_last_payment_date = COALESCE(${provider_last_payment_date}, provider_last_payment_date),
+      provider_next_payment_date = COALESCE(${provider_next_payment_date}, provider_next_payment_date)
     WHERE id = ${params.id}
     RETURNING *
   `;

@@ -20,6 +20,7 @@ export async function GET(req) {
         SELECT r.*, s.name AS service_name, s.slug AS service_slug,
           (r.expiration_date + (r.extra_days || ' days')::interval)::date AS final_expiration_date,
           ((r.expiration_date + (r.extra_days || ' days')::interval)::date - CURRENT_DATE) AS days_left,
+          (r.provider_next_payment_date - CURRENT_DATE) AS provider_days_left,
           (SELECT COUNT(*) FROM rental_account_payments p WHERE p.rental_account_id = r.id) AS payment_count
         FROM rental_accounts r
         LEFT JOIN services s ON s.id = r.service_id
@@ -30,6 +31,7 @@ export async function GET(req) {
         SELECT r.*, s.name AS service_name, s.slug AS service_slug,
           (r.expiration_date + (r.extra_days || ' days')::interval)::date AS final_expiration_date,
           ((r.expiration_date + (r.extra_days || ' days')::interval)::date - CURRENT_DATE) AS days_left,
+          (r.provider_next_payment_date - CURRENT_DATE) AS provider_days_left,
           (SELECT COUNT(*) FROM rental_account_payments p WHERE p.rental_account_id = r.id) AS payment_count
         FROM rental_accounts r
         LEFT JOIN services s ON s.id = r.service_id
@@ -48,12 +50,18 @@ export async function POST(req) {
     email,
     password,
     client_name,
+    client_phone,
+    client_email,
     account_created_date,
     expiration_date,
     extra_days,
     last_payment_date,
     amount,
-    notes
+    notes,
+    provider_name,
+    provider_amount,
+    provider_last_payment_date,
+    provider_next_payment_date
   } = await req.json();
 
   if (!email || !password) {
@@ -65,10 +73,12 @@ export async function POST(req) {
 
   const rows = await sql`
     INSERT INTO rental_accounts
-      (service_id, email, password, client_name, account_created_date, expiration_date, extra_days, last_payment_date, amount, notes)
+      (service_id, email, password, client_name, client_phone, client_email, account_created_date, expiration_date,
+       extra_days, last_payment_date, amount, notes, provider_name, provider_amount, provider_last_payment_date, provider_next_payment_date)
     VALUES
-      (${service_id || null}, ${email}, ${password}, ${client_name || null}, ${createdDate}, ${expirationDate},
-       ${extra_days || 0}, ${last_payment_date || null}, ${amount || null}, ${notes || null})
+      (${service_id || null}, ${email}, ${password}, ${client_name || null}, ${client_phone || null}, ${client_email || null},
+       ${createdDate}, ${expirationDate}, ${extra_days || 0}, ${last_payment_date || null}, ${amount || null}, ${notes || null},
+       ${provider_name || null}, ${provider_amount || null}, ${provider_last_payment_date || null}, ${provider_next_payment_date || null})
     RETURNING *
   `;
 

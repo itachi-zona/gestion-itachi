@@ -168,3 +168,13 @@ CREATE TABLE IF NOT EXISTS rental_account_payments (
   amount NUMERIC(10,2),
   created_at TIMESTAMP DEFAULT now()
 );
+
+-- Datos de contacto del cliente que alquila la cuenta completa, y datos del
+-- PROVEEDOR al que le compras/alquilas esa cuenta (a quién le pagas tú):
+-- cuánto le pagas, cuándo le pagaste la última vez y cuándo le debes pagar.
+ALTER TABLE rental_accounts ADD COLUMN IF NOT EXISTS client_phone VARCHAR(30);
+ALTER TABLE rental_accounts ADD COLUMN IF NOT EXISTS client_email VARCHAR(150);
+ALTER TABLE rental_accounts ADD COLUMN IF NOT EXISTS provider_name VARCHAR(100);
+ALTER TABLE rental_accounts ADD COLUMN IF NOT EXISTS provider_amount NUMERIC(10,2);
+ALTER TABLE rental_accounts ADD COLUMN IF NOT EXISTS provider_last_payment_date DATE;
+ALTER TABLE rental_accounts ADD COLUMN IF NOT EXISTS provider_next_payment_date DATE;
